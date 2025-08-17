@@ -44,7 +44,6 @@ async function callGemini(prompt, model, issueNumber) {
                     labels: { type: "ARRAY", items: { type: "STRING" }, description: "The final set of labels the issue should have" },
                     close: { type: "BOOLEAN", description: "Set to true if the issue should be closed as part of this action", nullable: true },
                     newTitle: { type: "STRING", description: "A new title for the issue or pull request", nullable: true },
-                    skipAnalysis: { type: "BOOLEAN", description: "True if the bot should skip full analysis and take no action because it's confident nothing else is needed" },
                 },
                 required: ["severity", "reason", "labels"]
             },
@@ -170,19 +169,27 @@ Possible permissions: label (add/remove labels), comment (post comments), close 
     return promptString;
 }
 
-async function updateLabels(octokit, issueNumber, issue, existingLabels, suggestedLabels) {
-    const currentLabels = issue.labels?.map(l => l.name || l) || [];
-    const labelsToAdd = suggestedLabels.filter(l => !currentLabels.includes(l));
-    const labelsToRemove = currentLabels.filter(l => !suggestedLabels.includes(l));
+function getLabelChanges(existingLabels, suggestedLabels) {
+    const current = Array.isArray(existingLabels) ? existingLabels : [];
+    const proposed = Array.isArray(suggestedLabels) ? suggestedLabels : [];
 
-    if (labelsToAdd.length === 0 && labelsToRemove.length === 0) return;
+    const labelsToAdd = proposed.filter(l => !current.includes(l));
+    const labelsToRemove = current.filter(l => !proposed.includes(l));
 
     const changes = [
         ...labelsToAdd.map(l => `+${l}`),
         ...labelsToRemove.map(l => `-${l}`)
     ];
+    const mergedLabels = [...current, ...changes].filter(Boolean);
 
-    const mergedLabels = [...(existingLabels || []), ...changes].filter(Boolean);
+    return { labelsToAdd, labelsToRemove, mergedLabels };
+}
+
+async function updateLabels(octokit, issueNumber, issue, existingLabels, suggestedLabels) {
+    const { labelsToAdd, labelsToRemove, mergedLabels } = getLabelChanges(existingLabels, suggestedLabels);
+
+    if (labelsToAdd.length === 0 && labelsToRemove.length === 0) return;
+
     console.log(`  🏷️ Labels: ${mergedLabels.length ? mergedLabels.join(', ') : 'none'}`);
 
     if (!octokit || !PERMISSIONS.has('label')) return;
@@ -275,14 +282,21 @@ async function processIssue(octokit, issue, lastTriaged, previousReasoning, issu
     // Quick analysis before going further.
     const initial = await callGemini(prompt, AI_MODEL_FAST, issueNumber);
     initial._model = 'fast';
-    if (initial.skipAnalysis) {
+
+    // If the model proposes no actions, skip further analysis.
+    const { labelsToAdd, labelsToRemove } = getLabelChanges(metadata.labels, initial.labels);
+    const hasLabelChanges = labelsToAdd.length > 0 || labelsToRemove.length > 0;
+    const hasComment = typeof initial.comment === 'string' && initial.comment.length > 0;
+    const hasTitleChange = typeof initial.newTitle === 'string' && initial.newTitle !== issue.title;
+    const wantsClose = initial.close === true;
+    if (!hasLabelChanges && !hasComment && !hasTitleChange && !wantsClose) {
         console.log(`⏭️ #${issueNumber}: ${initial.reason}`);
-        return initial;
+        return { skipped: true, reason: initial.reason || 'no actions' };
     }
 
     console.log(`🔁 #${issueNumber}: ${initial.reason}`);
 
-    // Full analysis before taking any action.
+    // Full analysis before taking any action for highest quality results.
     const analysis = await callGemini(prompt, AI_MODEL_PRO, issueNumber);
     analysis._model = 'pro';
     console.log(`🤖 #${issueNumber}: ${analysis.reason}`);

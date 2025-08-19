@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Global constants
-const AI_MODEL_FAST = 'gemini-2.5-flash-lite';
+const AI_MODEL_FAST = 'gemini-2.5-flash';
 const AI_MODEL_PRO = 'gemini-2.5-pro';
 const DB_PATH = process.env.AUTOTRIAGE_DB_PATH;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;

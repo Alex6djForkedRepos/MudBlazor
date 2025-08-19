@@ -38,35 +38,16 @@ async function callGemini(prompt, model, issueNumber) {
             responseSchema: {
                 type: "OBJECT",
                 properties: {
-                    severity: {
-                        type: "INTEGER",
-                        description: "How severe the issue is on a scale of 1 to 10",
-                        minimum: 1,
-                        maximum: 10
-                    },
+                    severity: { type: "INTEGER", description: "How severe the issue is on a scale of 1 to 10" },
                     reason: { type: "STRING", description: "Brief thought process for logging purposes" },
-                    comment: {
-                        type: ["STRING", "NULL"],
-                        description: "A comment to reply to the issue with"
-                    },
-                    labels: {
-                        type: "ARRAY",
-                        items: { type: "STRING" },
-                        description: "The final set of labels the issue should have"
-                    },
-                    close: {
-                        type: ["BOOLEAN", "NULL"],
-                        description: "Set to true if the issue should be closed as part of this action"
-                    },
-                    newTitle: {
-                        type: ["STRING", "NULL"],
-                        description: "A new title for the issue or pull request"
-                    }
+                    comment: { type: "STRING", description: "A comment to reply to the issue with" },
+                    labels: { type: "ARRAY", items: { type: "STRING" }, description: "The final set of labels the issue should have" },
+                    close: { type: "BOOLEAN", description: "Set to true if the issue should be closed as part of this action" },
+                    newTitle: { type: "STRING", description: "A new title for the issue or pull request" },
                 },
-                required: ["severity", "reason", "labels"],
-                additionalProperties: false
+                required: ["severity", "reason", "labels"]
             },
-            temperature: 0.2
+            temperature: 0.2,
         }
     };
 
@@ -87,6 +68,8 @@ async function callGemini(prompt, model, issueNumber) {
     if (response.status === 500) throw new Error('MODEL_INTERNAL_ERROR');
     if (response.status === 503) throw new Error('MODEL_OVERLOADED');
     if (!response.ok) {
+        const bodyText = await response.text().catch(() => '<no body>');
+        saveArtifact(issueNumber || 'global', `gemini-error-${model}-${Date.now()}.log`, `${response.status} ${response.statusText}\n\n${bodyText}`);
         throw new Error(`${response.status} ${response.statusText}`);
     }
 
@@ -97,7 +80,8 @@ async function callGemini(prompt, model, issueNumber) {
 
     try {
         return JSON.parse(result);
-    } catch {
+    } catch (parseErr) {
+        saveArtifact(issueNumber || 'global', `gemini-parse-error-${model}-${Date.now()}.json`, JSON.stringify({ message: parseErr.message, stack: parseErr.stack }, null, 2));
         throw new Error('INVALID_RESPONSE');
     }
 }
@@ -463,6 +447,12 @@ function saveDatabase(db) {
 
 main().catch(error => {
     console.error(`💥 ${error.message}`);
+    try {
+        const contents = (error && error.stack) ? error.stack : (typeof error === 'string' ? error : JSON.stringify(error, null, 2));
+        saveArtifact('global', "error.log", contents);
+    } catch (e) {
+        console.error('Failed to write error artifact:', e && e.message);
+    }
     core.setFailed(error.message);
     process.exit(1);
 });

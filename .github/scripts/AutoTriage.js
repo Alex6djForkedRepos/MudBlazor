@@ -47,7 +47,7 @@ async function callGemini(prompt, model, issueNumber) {
                 },
                 required: ["severity", "reason", "labels"]
             },
-            temperature: 0.2,
+            temperature: 0.0,
         }
     };
 
@@ -148,9 +148,6 @@ async function buildPrompt(octokit, issue, metadata, lastTriaged, previousReason
     const timelineReport = await buildTimeline(octokit, issue.number);
     const promptString = `${basePrompt}
 
-=== SECTION: TITLE OF ISSUE TO ANALYZE ===
-${issue.title}
-
 === SECTION: BODY OF ISSUE TO ANALYZE ===
 ${issue.body}
 
@@ -163,9 +160,28 @@ ${JSON.stringify(timelineReport, null, 2)}
 === SECTION: TRIAGE CONTEXT ===
 Last triaged: ${lastTriaged || 'never'}
 Previous reasoning: ${previousReasoning || 'none'}
-Current date: ${new Date().toISOString()}
-Current permissions: ${Array.from(PERMISSIONS).join(', ') || 'none'}
-Possible permissions: label (add/remove labels), comment (post comments), close (close issue), edit (edit title)
+Current date: ${new Date().toISOString()}. Do all date logic by explicit comparison to the provided "Current date" timestamp (no vague relative wording).
+Current permissions: ${Array.from(PERMISSIONS).join(', ') || 'none'}. Possible permissions: label (add/remove labels), comment (post comments), close (close issue), edit (edit title)
+
+=== SECTION: OUTPUT FORMAT ===
+Return only valid JSON (no Markdown fences, no prose).
+
+Required keys:
+- severity: integer in [1, 10]
+- reason: string (brief rationale)
+- labels: array of strings (final label set)
+
+Optional keys:
+- comment: string
+- close: boolean
+- newTitle: string
+
+Rules:
+- Do not include any keys other than the ones above.
+- Do not output "null" for any field; omit optional fields instead.
+- If you propose closing, set 'close: true'.
+- If you propose a title change, set 'newTitle' to the exact new title.
+
 `;
 
     saveArtifact(issue.number, `gemini-input.md`, promptString);

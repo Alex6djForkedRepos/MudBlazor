@@ -87,22 +87,23 @@ async function callGemini(prompt, model, issueNumber) {
 }
 
 async function buildMetadata(issue) {
-    const isIssue = !issue.pull_request;
-    const currentLabels = issue.labels?.map(l => l.name || l) || [];
-    const hasAssignee = Array.isArray(issue.assignees) ? issue.assignees.length > 0 : !!issue.assignee;
-
     return {
         title: issue.title,
         state: issue.state,
-        type: isIssue ? 'issue' : 'pull request',
+        type: issue.pull_request ? 'pull request' : 'issue',
         number: issue.number,
         author: issue.user?.login || 'unknown',
+        user_type: issue.user?.type || 'unknown',
+        draft: issue.draft || false,
+        locked: issue.locked || false,
+        milestone: issue.milestone?.title || null,
         created_at: issue.created_at,
         updated_at: issue.updated_at,
+        closed_at: issue.closed_at || null,
         comments: issue.comments || 0,
         reactions: issue.reactions?.total_count || 0,
-        labels: currentLabels,
-        assigned: hasAssignee,
+        labels: issue.labels?.map(l => l.name || l) || [],
+        assignees: Array.isArray(issue.assignees) ? issue.assignees.map(a => a.login) : (issue.assignee ? [issue.assignee.login] : []),
     };
 }
 
@@ -165,28 +166,22 @@ Current permissions: ${Array.from(PERMISSIONS).join(', ') || 'none'}. Possible p
 
 === SECTION: OUTPUT FORMAT ===
 Return only valid JSON (no Markdown fences, no prose).
+Only perform actions (labels, comments, edits, closing) when this prompt explicitly authorizes them and the action's preconditions are satisfied. Do not perform subjective or discretionary actions (for example: "this looks resolved", "seems low-priority", or "close because maintainer answered"). If the conditions for an action are ambiguous or not precisely met, do not act.
 
 Required fields (always include):
 - severity: integer from 1-10 (issue severity rating)
-- reason: string (brief explanation of analysis and decision)
-- labels: array of strings (complete final label set for the issue)
+- reason: string (explanation of analysis and every decision)
+- labels: array of strings (complete final label set for the issue, requires "label" permission for changes; if permission absent, return existing labels unchanged)
 
 Optional fields (include only when conditions are met):
-- comment: string (comment to post on the issue)
-- close: boolean (set to true to close the issue)  
-- newTitle: string (new title for the issue)
+- comment: string (comment to post on the issue, requires "comment" permission)
+- close: boolean (set to true to close the issue, requires "close" permission)  
+- newTitle: string (new title for the issue, requires "edit" permission)
 
 Inclusion rules for optional fields:
 - Only include an optional field if the corresponding permission is granted in "Current permissions"
-- Only include an optional field if repository policy explicitly authorizes the action
-- Do not include optional fields based on subjective judgment
+- Only include an optional field if the prompt explicitly authorizes the action
 - Do not include fields with null values or empty strings
-
-Permission-specific rules:
-- comment: requires "comment" permission
-- close: requires "close" permission and objective policy authorization
-- newTitle: requires "edit" permission and policy authorization for title modifications
-- labels: requires "label" permission for changes; if permission absent, return existing labels unchanged
 `;
 
     saveArtifact(issue.number, `gemini-input.md`, promptString);
@@ -246,7 +241,7 @@ async function executeActions(octokit, issueNumber, issue, analysis, metadata) {
         console.log(`  💬 Comments: ${metadata.comments}, Reactions: ${metadata.reactions}`);
         console.log(`  💬 Posting comment:`);
         console.log(analysis.comment.replace(/^/gm, '  > '));
-        await createComment(octokit, issueNumber, analysis.comment);
+        await createComment(octokit, issueNumber, analysis);
     }
 
     if (analysis.newTitle) {
@@ -258,13 +253,16 @@ async function executeActions(octokit, issueNumber, issue, analysis, metadata) {
     }
 }
 
-async function createComment(octokit, issueNumber, body) {
+async function createComment(octokit, issueNumber, analysis) {
     if (!octokit || !PERMISSIONS.has('comment')) return;
+
+    const commentWithReasoning = `<!-- ${analysis.reason || 'No reasoning provided'} -->\n\n${analysis.comment}`;
+
     await octokit.rest.issues.createComment({
         owner: OWNER,
         repo: REPO,
         issue_number: issueNumber,
-        body: body
+        body: commentWithReasoning
     });
 }
 
@@ -294,6 +292,8 @@ async function closeIssue(octokit, issueNumber, reason = 'not_planned') {
 async function processIssue(octokit, issue, lastTriaged, previousReasoning, issueNumber) {
     const daysSinceTriage = lastTriaged ? (Date.now() - new Date(lastTriaged).getTime()) / 86400000 : Infinity;
     const hasNewActivity = !lastTriaged || new Date(issue.updated_at) > new Date(lastTriaged);
+
+    saveArtifact(issueNumber, 'issue.json', JSON.stringify(issue, null, 2));
 
     // Skip early without building prompt if working through backlog and the issue hasn't expired
     if (PROCESSING_BACKLOG && daysSinceTriage < 7 && !hasNewActivity) {

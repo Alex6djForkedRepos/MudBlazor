@@ -38,14 +38,13 @@ async function callGemini(prompt, model, issueNumber) {
             responseSchema: {
                 type: "OBJECT",
                 properties: {
-                    severity: { type: "INTEGER", description: "Issue severity rating from 1-10" },
                     reason: { type: "STRING", description: "Brief explanation of analysis and decision" },
                     comment: { type: "STRING", description: "Comment to post on the issue" },
                     labels: { type: "ARRAY", items: { type: "STRING" }, description: "Complete final label set for the issue" },
                     close: { type: "BOOLEAN", description: "Whether to close the issue" },
                     newTitle: { type: "STRING", description: "New title for the issue or pull request" },
                 },
-                required: ["severity", "reason", "labels"]
+                required: ["reason", "labels"]
             },
             temperature: 0.0,
         }
@@ -169,7 +168,6 @@ Return only valid JSON (no Markdown fences, no prose).
 Only perform actions (labels, comments, edits, closing) when this prompt explicitly authorizes them and the action's preconditions are satisfied. Do not perform subjective or discretionary actions (for example: "this looks resolved", "seems low-priority", or "close because maintainer answered"). If the conditions for an action are ambiguous or not precisely met, do not act.
 
 Required fields (always include):
-- severity: integer from 1-10 (issue severity rating)
 - reason: string (explanation of analysis and every decision)
 - labels: array of strings (complete final label set for the issue, requires "label" permission for changes; if permission absent, return existing labels unchanged)
 

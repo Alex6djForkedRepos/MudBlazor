@@ -114,7 +114,7 @@ Whether it's fixing bugs, adding features, or improving documentation, everythin
 
 💬 Feel free to chat with us [on Discord](https://discord.gg/mudblazor) to get feedback before diving in.  
 📚 Check out our [contribution guidelines](/CONTRIBUTING.md) to get started and learn more about how the project works.  
-✅ If a PR fixes something you reported, [locally test a preview version](/TESTING.md) to ensure your app works as expected.
+✅ If a PR fixes something you reported, [locally test it](https://github.com/MudBlazor/MudBlazor/discussions/12085) to ensure your app works as expected.
 
 ## ⚙️ Version Support
 

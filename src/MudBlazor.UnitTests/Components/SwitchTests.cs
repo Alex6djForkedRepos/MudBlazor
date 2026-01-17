@@ -51,7 +51,7 @@ namespace MudBlazor.UnitTests.Components
         [TestCase(Color.Warning, Color.Dark)]
         [TestCase(Color.Error, Color.Primary)]
         [TestCase(Color.Dark, Color.Primary)]
-        public void SwitchColorTest(Color color, Color uncheckedcolor)
+        public async Task SwitchColorTestAsync(Color color, Color uncheckedcolor)
         {
             var comp = Context.Render<MudSwitch<bool>>(x => x.Add(c => c.Color, color).Add(b => b.UncheckedColor, uncheckedcolor));
 
@@ -63,7 +63,7 @@ namespace MudBlazor.UnitTests.Components
             checkboxClasses.ClassList.Should().ContainInOrder(new[] { $"mud-{uncheckedcolor.ToStringFast(true)}-text", $"hover:mud-{uncheckedcolor.ToStringFast(true)}-hover" });
 
             // click and check if it has new color
-            comp.Find("input").Change(true);
+            await comp.Find("input").ChangeAsync(true);
             box.ReadValue.Should().Be(true);
             checkboxClasses.ClassList.Should().ContainInOrder(new[] { $"mud-{color.ToStringFast(true)}-text", $"hover:mud-{color.ToStringFast(true)}-hover" });
         }

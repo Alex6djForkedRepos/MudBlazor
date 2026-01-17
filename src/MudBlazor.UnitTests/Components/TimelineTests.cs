@@ -117,7 +117,7 @@ namespace MudBlazor.UnitTests.Components
         }
 
         [Test]
-        public void TimelineTest_SelectItem()
+        public async Task TimelineTest_SelectItemAsync()
         {
             var comp = Context.Render<TimelineTest>();
 
@@ -127,7 +127,7 @@ namespace MudBlazor.UnitTests.Components
 
             for (var i = 0; i < 5; i++)
             {
-                itemsDiv[i].Click();
+                await itemsDiv[i].ClickAsync();
 
                 comp.Instance.SelectedIndex.Should().Be(i);
             }

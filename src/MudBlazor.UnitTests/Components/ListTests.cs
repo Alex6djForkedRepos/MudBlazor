@@ -31,7 +31,7 @@ namespace MudBlazor.UnitTests.Components
         /// <para>In this test no item is selected to begin with</para>
         /// </summary>
         [Test]
-        public void ListSelectionTest()
+        public async Task ListSelectionTestAsync()
         {
             var comp = Context.Render<ListSelectionTest>();
             var list = comp.FindComponent<MudList<string>>().Instance;
@@ -40,29 +40,29 @@ namespace MudBlazor.UnitTests.Components
             comp.FindAll("div.mud-list-item").Count.Should().Be(9); // 7 choices, 2 groups
             comp.FindAll("div.mud-selected-item").Count.Should().Be(0);
             // click water
-            comp.FindAll("div.mud-list-item")[0].Click();
+            await comp.FindAll("div.mud-list-item")[0].ClickAsync();
             list.SelectedValue.Should().Be("Sparkling Water");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[0].Markup.Should().Contain("mud-selected-item");
             // click Pu'er, a heavily fermented Chinese tea that tastes like an old leather glove
-            comp.FindAll("div.mud-list-item")[4].Click();
+            await comp.FindAll("div.mud-list-item")[4].ClickAsync();
             list.SelectedValue.Should().Be("Pu'er");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[4].Markup.Should().Contain("mud-selected-item");
             // click Cafe Latte
-            comp.FindAll("div.mud-list-item")[8].Click();
+            await comp.FindAll("div.mud-list-item")[8].ClickAsync();
             list.SelectedValue.Should().Be("Cafe Latte");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[8].Markup.Should().Contain("mud-selected-item");
             // click Cafe Latte again which should NOT deselect it because we are in single-selection mode
-            comp.FindAll("div.mud-list-item")[8].Click();
+            await comp.FindAll("div.mud-list-item")[8].ClickAsync();
             list.SelectedValue.Should().Be("Cafe Latte");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[8].Markup.Should().Contain("mud-selected-item");
         }
 
         [Test]
-        public void ListToggleSelectionTest()
+        public async Task ListToggleSelectionTestAsync()
         {
             var comp = Context.Render<ListSelectionTest>(self => self.Add(x => x.SelectionMode, SelectionMode.ToggleSelection));
             var list = comp.FindComponent<MudList<string>>().Instance;
@@ -71,22 +71,22 @@ namespace MudBlazor.UnitTests.Components
             comp.FindAll("div.mud-list-item").Count.Should().Be(9); // 7 choices, 2 groups
             comp.FindAll("div.mud-selected-item").Count.Should().Be(0);
             // click water
-            comp.FindAll("div.mud-list-item")[0].Click();
+            await comp.FindAll("div.mud-list-item")[0].ClickAsync();
             list.SelectedValue.Should().Be("Sparkling Water");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[0].Markup.Should().Contain("mud-selected-item");
             // click Pu'er, a heavily fermented Chinese tea that tastes like an old leather glove
-            comp.FindAll("div.mud-list-item")[4].Click();
+            await comp.FindAll("div.mud-list-item")[4].ClickAsync();
             list.SelectedValue.Should().Be("Pu'er");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[4].Markup.Should().Contain("mud-selected-item");
             // click Cafe Latte
-            comp.FindAll("div.mud-list-item")[8].Click();
+            await comp.FindAll("div.mud-list-item")[8].ClickAsync();
             list.SelectedValue.Should().Be("Cafe Latte");
             comp.FindAll("div.mud-selected-item").Count.Should().Be(1);
             comp.FindComponents<MudListItem<string>>()[8].Markup.Should().Contain("mud-selected-item");
             // click Cafe Latte again which should deselect it because we are in toggle-selection mode
-            comp.FindAll("div.mud-list-item")[8].Click();
+            await comp.FindAll("div.mud-list-item")[8].ClickAsync();
             list.SelectedValue.Should().Be(null);
             comp.FindAll("div.mud-selected-item").Count.Should().Be(0);
             comp.FindComponents<MudListItem<string>>()[8].Markup.Should().NotContain("mud-selected-item");
@@ -104,7 +104,7 @@ namespace MudBlazor.UnitTests.Components
         }
 
         [Test]
-        public void ListMultiSelectionBindingTest()
+        public async Task ListMultiSelectionBindingTest()
         {
             var comp = Context.Render<ListMultiSelectionBindingTest>();
             var list1 = comp.FindComponents<MudList<string>>().FirstOrDefault(x => x.Instance.Class == "list-1");
@@ -112,10 +112,11 @@ namespace MudBlazor.UnitTests.Components
             list1.FindComponents<MudListItem<string>>().Count.Should().Be(8);
             var GetCheckBox = (IRenderedComponent<MudList<string>> list, string text) => list.FindComponents<MudListItem<string>>()
                         .FirstOrDefault(x => x.Instance.Text == text)?.FindComponent<MudCheckBox<bool?>>().Instance;
-            var Select = (IRenderedComponent<MudList<string>> list, string text) => list.FindComponents<MudListItem<string>>()
-                        .FirstOrDefault(x => x.Instance.Text == text)?.Find("div.mud-list-item").Click();
+            var Select = async (IRenderedComponent<MudList<string>> list, string text) =>
+                        await list.FindComponents<MudListItem<string>>()
+                        .FirstOrDefault(x => x.Instance.Text == text).Find("div.mud-list-item").ClickAsync();
             // click water on list1
-            Select(list1, "Sparkling Water");
+            await Select(list1, "Sparkling Water");
             comp.Find("p.selected-values").TrimmedText().Should().Be("Carbonated H²O");
             GetCheckBox(list1, "Milk").ReadValue.Should().Be(false);
             GetCheckBox(list1, "Sparkling Water").ReadValue.Should().Be(true);
@@ -130,7 +131,7 @@ namespace MudBlazor.UnitTests.Components
             GetCheckBox(list2, "Irish Coffee").ReadValue.Should().Be(false);
             GetCheckBox(list2, "Double Espresso").ReadValue.Should().Be(false);
             // click Irish on list2
-            Select(list2, "Irish Coffee");
+            await Select(list2, "Irish Coffee");
             comp.Find("p.selected-values").TrimmedText().Should().Be("Carbonated H²O, Irish Coffee");
             GetCheckBox(list1, "Milk").ReadValue.Should().Be(false);
             GetCheckBox(list1, "Sparkling Water").ReadValue.Should().Be(true);
@@ -145,7 +146,7 @@ namespace MudBlazor.UnitTests.Components
             GetCheckBox(list2, "Irish Coffee").ReadValue.Should().Be(true);
             GetCheckBox(list2, "Double Espresso").ReadValue.Should().Be(false);
             // click off water on list2
-            Select(list2, "Sparkling Water");
+            await Select(list2, "Sparkling Water");
             comp.Find("p.selected-values").TrimmedText().Should().Be("Irish Coffee");
             GetCheckBox(list1, "Milk").ReadValue.Should().Be(false);
             GetCheckBox(list1, "Sparkling Water").ReadValue.Should().Be(false);

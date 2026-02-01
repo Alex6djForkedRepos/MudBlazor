@@ -34,6 +34,7 @@ namespace MudBlazor
         private string _searchText = string.Empty;
         private string? _lastSelectedId = string.Empty;
         private DateTime _lastSearchTime = DateTime.MinValue;
+        private readonly ParameterState<bool> _openState;
         private readonly ParameterState<IEnumerable<T?>?> _selectedValuesState;
 
         public MudSelect()
@@ -49,6 +50,9 @@ namespace MudBlazor
             registerScope.RegisterParameter<IEqualityComparer<T?>?>(nameof(Comparer))
                 .WithParameter(() => Comparer)
                 .WithChangeHandler(OnComparerChangedAsync);
+            _openState = registerScope.RegisterParameter<bool>(nameof(Open))
+                .WithParameter(() => Open)
+                .WithEventCallback(() => OpenChanged);
             _selectedValuesState = registerScope.RegisterParameter<IEnumerable<T?>?>(nameof(SelectedValues))
                 .WithParameter(() => SelectedValues)
                 .WithEventCallback(() => SelectedValuesChanged)
@@ -146,7 +150,7 @@ namespace MudBlazor
         {
             var selectList = _items;
 
-            if (!_open)
+            if (!_openState.Value)
                 selectList = _shadowLookup.Values.ToList();
 
             if (selectList.Count == 0)
@@ -248,6 +252,23 @@ namespace MudBlazor
         }
 
         /// <summary>
+        /// Whether this select dropdown is open and the options are visible.
+        /// </summary>
+        /// <remarks>
+        /// When this property changes, <see cref="OpenChanged"/> occurs.
+        /// </remarks>
+        [Parameter, ParameterState]
+        [Category(CategoryTypes.Popover.Behavior)]
+        public bool Open { get; set; }
+
+        /// <summary>
+        /// Occurs when <see cref="Open"/> has changed.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Popover.Behavior)]
+        public EventCallback<bool> OpenChanged { get; set; }
+
+        /// <summary>
         /// Displays the dropdown popover in a fixed position, even while scrolling.
         /// </summary>
         /// <remarks>
@@ -298,20 +319,6 @@ namespace MudBlazor
         [Category(CategoryTypes.FormComponent.Appearance)]
         [Parameter]
         public string? InputClass { get; set; }
-
-        /// <summary>
-        /// Occurs when this drop-down opens.
-        /// </summary>
-        [Category(CategoryTypes.FormComponent.Behavior)]
-        [Parameter]
-        public EventCallback OnOpen { get; set; }
-
-        /// <summary>
-        /// Occurs when this drop-down closes.
-        /// </summary>
-        [Category(CategoryTypes.FormComponent.Behavior)]
-        [Parameter]
-        public EventCallback OnClose { get; set; }
 
         /// <summary>
         /// Prevents interaction with background elements while this list is open.
@@ -607,7 +614,7 @@ namespace MudBlazor
                     result = true;
             }
             UpdateSelectAllChecked();
-            if (result.HasValue == false)
+            if (!result.HasValue)
             {
                 result = item.Value?.Equals(ReadValue);
             }
@@ -688,7 +695,7 @@ namespace MudBlazor
         /// </remarks>
         [Parameter]
         [Category(CategoryTypes.FormComponent.ListBehavior)]
-        public bool LockScroll { get; set; } = false;
+        public bool LockScroll { get; set; }
 
         /// <summary>
         /// Occurs when the clear button is clicked.
@@ -706,8 +713,6 @@ namespace MudBlazor
         [Parameter]
         [Category(CategoryTypes.FormComponent.ListBehavior)]
         public bool SelectionOnEnter { get; set; }
-
-        internal bool _open;
 
         /// <summary>
         /// The current adornment icon to display.
@@ -849,7 +854,7 @@ namespace MudBlazor
         {
             if (GetDisabledState() || GetReadOnlyState())
                 return;
-            if (_open)
+            if (_openState.Value)
                 await CloseMenu(true);
             else
                 await OpenMenu();
@@ -866,7 +871,7 @@ namespace MudBlazor
             if (GetDisabledState() || GetReadOnlyState())
                 return;
 
-            _open = true;
+            await _openState.SetValueAsync(true);
             _needsHighlightAfterRender = true;
             UpdateIcon();
             StateHasChanged();
@@ -883,8 +888,6 @@ namespace MudBlazor
             }
             //disable escape propagation: if selectmenu is open, only the select popover should close and underlying components should not handle escape key
             await KeyInterceptorService.UpdateKeyAsync(_elementId, new("Escape", stopDown: "key+none"));
-
-            await OnOpen.InvokeAsync();
         }
 
         /// <summary>
@@ -895,7 +898,7 @@ namespace MudBlazor
         /// </remarks>
         public async Task CloseMenu(bool focusAgain = true)
         {
-            _open = false;
+            await _openState.SetValueAsync(false);
             UpdateIcon();
             if (focusAgain)
             {
@@ -907,8 +910,6 @@ namespace MudBlazor
 
             //enable escape propagation: the select popover was closed, now underlying components are allowed to handle escape key
             await KeyInterceptorService.UpdateKeyAsync(_elementId, new("Escape", stopDown: "none"));
-
-            await OnClose.InvokeAsync();
         }
 
         private void OnFitContentChanged(ParameterChangedEventArgs<bool> args)
@@ -939,7 +940,7 @@ namespace MudBlazor
 
         private void UpdateIcon()
         {
-            _currentIcon = !string.IsNullOrWhiteSpace(AdornmentIcon) ? AdornmentIcon : _open ? CloseIcon : OpenIcon;
+            _currentIcon = !string.IsNullOrWhiteSpace(AdornmentIcon) ? AdornmentIcon : _openState.Value ? CloseIcon : OpenIcon;
         }
 
         protected override void OnInitialized()
@@ -1179,7 +1180,7 @@ namespace MudBlazor
                         break;
                     }
 
-                    if (_open == false)
+                    if (!_openState.Value)
                     {
                         await OpenMenu();
                         break;
@@ -1194,7 +1195,7 @@ namespace MudBlazor
                         break;
                     }
 
-                    if (_open == false)
+                    if (!_openState.Value)
                     {
                         await OpenMenu();
                         break;
@@ -1219,7 +1220,7 @@ namespace MudBlazor
                     var index = _items.FindIndex(x => x.ItemId == _activeItemId);
                     if (!MultiSelection)
                     {
-                        if (!_open)
+                        if (!_openState.Value)
                         {
                             await OpenMenu();
                             break;
@@ -1230,7 +1231,7 @@ namespace MudBlazor
                         break;
                     }
 
-                    if (!_open)
+                    if (!_openState.Value)
                     {
                         await OpenMenu();
                         break;
@@ -1355,7 +1356,7 @@ namespace MudBlazor
 
         private async Task OnFocusOutAsync(FocusEventArgs focusEventArgs)
         {
-            if (_open)
+            if (_openState.Value)
             {
                 // when the menu is open we immediately get back the focus if we lose it (i.e. because of checkboxes in multi-select)
                 // otherwise we can't receive key strokes any longer

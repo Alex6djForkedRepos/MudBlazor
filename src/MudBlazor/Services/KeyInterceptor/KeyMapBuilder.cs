@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Components.Web;
 namespace MudBlazor.Services;
 
 /// <summary>
-/// A fluent builder for creating declarative key command mappings.
-/// Supports conditional execution and efficient command dispatching.
+/// Fluent API for building key-command maps that the key interceptor can execute efficiently.
 /// </summary>
+/// <remarks>
+/// Use this builder when you want readable, declarative keyboard shortcuts and a single observer that can be registered with <see cref="IKeyInterceptorService"/>. It compiles user-friendly declarations into a minimal command list optimized for dispatch.
+/// </remarks>
 public sealed class KeyMapBuilder
 {
     private int _hookCount;
@@ -418,14 +420,6 @@ public sealed class KeyMapBuilder
             => inner.ExecuteAsync(args);
     }
 
-    /// <summary>
-    /// A hook command that always executes for its Kind, regardless of the key pressed.
-    /// Used to maintain virtual method override patterns.
-    /// Unlike regular commands, hooks do not stop the command chain after execution,
-    /// allowing subsequent commands to also process the same key event.
-    /// Hooks are always inserted at index 0 to ensure they execute before regular commands,
-    /// regardless of their declaration order in the builder.
-    /// </summary>
     private sealed class HookCommand(KeyEventKind kind, Func<KeyboardEventArgs, Task> hook) : IKeyCommand
     {
         public KeyEventKind Kind { get; } = kind;

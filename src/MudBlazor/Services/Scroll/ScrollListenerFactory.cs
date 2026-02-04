@@ -8,8 +8,11 @@ using Microsoft.JSInterop;
 namespace MudBlazor;
 
 /// <summary>
-/// Factory class for creating instances of <see cref="IScrollListener"/>.
+/// Creates <see cref="IScrollListener"/> instances with the configured JS runtime.
 /// </summary>
+/// <remarks>
+/// This factory keeps scroll listener construction consistent and avoids repeating DI lookups.
+/// </remarks>
 internal sealed class ScrollListenerFactory : IScrollListenerFactory
 {
     private readonly IServiceProvider _provider;

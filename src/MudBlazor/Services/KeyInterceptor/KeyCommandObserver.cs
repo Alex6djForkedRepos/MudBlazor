@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Components.Web;
 namespace MudBlazor.Services;
 
 /// <summary>
-/// Efficiently dispatches keyboard events to registered commands.
-/// Uses early-exit pattern for optimal performance.
+/// Dispatches keyboard events to a precompiled command list with an early-exit pipeline.
 /// </summary>
+/// <remarks>
+/// The key interceptor builds this observer after mapping user key bindings. It keeps the hot path small by splitting commands by event kind and stopping on the first non-hook match.
+/// </remarks>
 internal sealed class KeyCommandObserver :
     IKeyDownObserver,
     IKeyUpObserver

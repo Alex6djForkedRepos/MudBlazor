@@ -12,8 +12,12 @@ using MudBlazor.Utilities.ObserverManager;
 namespace MudBlazor;
 
 /// <summary>
-/// Represents a service for managing popovers.
+/// Manages popover lifecycles, state updates, and JS positioning for all active popovers.
 /// </summary>
+/// <remarks>
+/// This service is the backbone for menu, select, tooltip, and other popover-based components.
+/// It centralizes creation, updates, and disposal while coordinating with popover providers.
+/// </remarks>
 internal class PopoverService : IPopoverService, IBatchTimerHandler<MudPopoverHolder>
 {
     private bool _disposed;

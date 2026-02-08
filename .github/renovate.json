@@ -1,7 +1,7 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": [
-        "config:recommended"
+        "config:best-practices"
     ],
     "ignorePresets": [
         ":ignoreModulesAndTests",
@@ -12,22 +12,13 @@
         "build"
     ],
     "commitMessagePrefix": "Build: ",
-    "minimumReleaseAge": "7 days",
     "vulnerabilityAlerts": {
         "enabled": true,
-        "labels": [
+        "addLabels": [
             "awaiting triage"
         ]
     },
     "packageRules": [
-        {
-            "matchManagers": [
-                "github-actions"
-            ],
-            "reviewers": [
-                "danielchalmers"
-            ]
-        },
         {
             "matchPackageNames": [
                 "Microsoft.CodeAnalysis**"

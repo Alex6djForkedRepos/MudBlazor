@@ -525,16 +525,23 @@ namespace MudBlazor
             return _activeItem;
         }
 
-        private string GetRole() => GetReadOnly() ? "list" : "listbox";
-
-        private string? GetAriaMultiSelectable()
+        /// <summary>
+        /// Builds fallback accessibility attributes for the list container.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="MudList{T}"/> derives its container semantics from its selection behavior.
+        /// </remarks>
+        private Dictionary<string, object?> GetUserAttributes()
         {
-            if (GetReadOnly() || SelectionMode != SelectionMode.MultiSelection)
+            var attributes = new Dictionary<string, object?>(UserAttributes, StringComparer.OrdinalIgnoreCase);
+            attributes.TryAdd("role", GetReadOnly() ? "list" : "listbox");
+
+            if (!GetReadOnly() && SelectionMode == SelectionMode.MultiSelection)
             {
-                return null;
+                attributes.TryAdd("aria-multiselectable", "true");
             }
 
-            return "true";
+            return attributes;
         }
 
         /// <summary>

@@ -465,6 +465,19 @@ namespace MudBlazor.UnitTests.Components
         }
 
         [Test]
+        public void List_UserAttributes_ShouldOverrideGeneratedAccessibilityAttributes()
+        {
+            var comp = Context.Render<MudList<string>>(builder => builder
+                .Add(x => x.SelectionMode, SelectionMode.MultiSelection)
+                .AddUnmatched("role", "group")
+                .AddUnmatched("aria-multiselectable", "false"));
+
+            var list = comp.Find("div.mud-list");
+            list.GetAttribute("role").Should().Be("group");
+            list.GetAttribute("aria-multiselectable").Should().Be("false");
+        }
+
+        [Test]
         [TestCase(true, null, true)]
         [TestCase(true, true, true)]
         [TestCase(true, false, false)]

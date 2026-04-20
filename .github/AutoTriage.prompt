@@ -52,25 +52,24 @@ Misc labels:
 `API change`, `regression`, `breaking change`, `has workaround`
 
 ## Good First Issue
-Apply `good first issue` while ALL conditions are met:
-- The thread is not a PR
+Apply `good first issue` when ALL conditions are met:
+- The thread is an issue
 - The thread is not assigned
 - Has no `needs:` labels
-- Issue is at least partially-defined with clear acceptance criteria (what success looks like is explicitly stated or objectively verifiable)
+- Does not require a maintainer decision before implementation can begin
+- The issue is sufficiently-defined that a new contributor can make progress without needing maintainer clarification
+- The expected outcome is clear enough to review objectively
 - Does not involve complex areas (state management, rendering lifecycle, interop)
 - Does not require architectural decisions, breaking changes, or design discussions
-- Maintainers are not in disagreement of how to approach it
 
 ## Help Wanted
-Apply `help wanted` when ONE of these conditions is met:
-- Explicit maintainer approval
-- There is sufficient community engagement (>=5 comments or reactions from distinct non-author/non-maintainer users)
-
-Exclude `help wanted` if:
-- The thread is a PR
-- Issue was created by a maintainer or a bot
-- Qualifies for `good first issue`
-- Maintainers have said they choose to implement internally
+Apply `help wanted` when ALL conditions are met:
+- The thread is an issue
+- The thread is not assigned
+- Issue was not created by a maintainer or a bot
+- Has no `needs:` labels
+- Does not qualify for `good first issue`
+- The thread shows a sustained need for additional help beyond normal triage or discussion, based on the discussion history (for example, repeated non-maintainer offers to investigate or implement, repeated requests to move the issue forward, or explicit signals that outside contributions are welcome)
 
 ## Needs Triage
 Apply `awaiting triage` only when ALL following global conditions are met and at least one case below applies.

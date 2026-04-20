@@ -80,7 +80,7 @@ Exclude `help wanted` if:
 - Thread was assigned less than 3 months ago
 
 ## Needs Triage
-Apply `awaiting triage` only when ALL global conditions are met and at least one case below applies.
+Apply `awaiting triage` only when ALL following global conditions are met and at least one case below applies.
 
 Global conditions:
 - Thread is open
@@ -89,14 +89,14 @@ Global conditions:
 
 Case — Thread is a pull request:
 - The author comments a request for help/review/triage
-- No maintainer has replied since then
-- At least 7 days have elapsed
+- No maintainer has replied since that comment
+- At least 14 days have elapsed since that comment
 
 Case — Thread is an issue:
-- Has at least two attention-request comments from any users (e.g., asks for help/review/triage)
+- Has at least two attention-request comments (e.g., asks for help/review/triage)
 - Those comments were within the last 12 months
-- Those comments are at least 14 days apart
-- No maintainer has replied since the first request
+- Those comments are at least 28 days apart
+- No maintainer has replied since the first comment
 
 ## Missing Information Handling
 Purpose: Capture essential details early on open threads so maintainers can act quickly, including low-signal reports (link-only, screenshot/video-only, missing PR rationale, or unsubstantiated enhancements), while staying out of their way once they engage.
@@ -203,12 +203,10 @@ General Inactivity Rules:
 ### Issues Only
 - Set `state: not_planned` on issues that have been stale for >=84 consecutive days
 
-Mark issues as `stale` when ALL conditions are met:
-- Meets ONE of these inactivity thresholds:
-  - Bug: >=18 months without a timeline event (excluding labeled/unlabeled/renamed)
-  - Feature: >=36 months without a timeline event (excluding labeled/unlabeled/renamed)
-  - Has `question`, `answered`, `not a bug`, `not planned`, `duplicate`, `invalid`, `fixed`, or any `needs:` label for >=28 consecutive days
-- Does NOT qualify for `on hold` or `awaiting triage` labels
+Mark issues as `stale` when ONE of these inactivity thresholds are met:
+- Bug: >=18 months without a timeline event (excluding labeled/unlabeled/renamed/unassigned)
+- Feature: >=36 months without a timeline event (excluding labeled/unlabeled/renamed/unassigned)
+- Has `question`, `answered`, `not a bug`, `not planned`, `duplicate`, `invalid`, `fixed`, or any `needs:` label for >=28 consecutive days
 
 Post this comment verbatim (exclude default footer) when marking an issue stale:
 ```
@@ -221,9 +219,9 @@ If no response is received, it will be automatically closed.
 ### Pull Requests Only
 - Never close pull requests due to staleness
 
-Mark pull requests as `stale` when ALL conditions are met:
-- No timeline event (excluding labeled/unlabeled/renamed) for >=168 consecutive days
-- Does NOT qualify for `on hold` or `awaiting triage` labels
+Mark pull requests as `stale` while ALL conditions are met:
+- Has any `needs:` label
+- No timeline event (excluding labeled/unlabeled/renamed or reviewer/assignee removed) for >=84 consecutive days
 
 Post this comment verbatim (exclude default footer) when marking a pull request stale:
 ```

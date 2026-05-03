@@ -278,7 +278,7 @@ namespace MudBlazor.Docs.Services
             {
                 RegisterPage(
                     title: link.Title,
-                    subtitle: "",
+                    subtitle: link.Group,
                     componentType: null,
                     link: link.Href
                 );
